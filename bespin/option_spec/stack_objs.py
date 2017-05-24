@@ -356,10 +356,17 @@ class Stack(dictobj):
 
         # Hack for sanity check
         for var in self.nested_vars():
-            if hasattr(var, 'stack') and not isinstance(var.stack, six.string_types):
-                if not var.stack.cloudformation.status.exists:
+            if hasattr(var, 'stack'):
+                if isinstance(var.stack, Stack):
+                    cloudformation = var.stack.cloudformation
+                elif isinstance(var.stack, six.string_types)::
+                    cloudformation = self.bespin.credentials.cloudformation(var.stack)
+                else:
+                    raise BadOption("DynamicVariable stack must be string or Stack", got=type(var.stack), val=var.stack)
+
+                if not cloudformation.status.exists:
                     var._resolved = "YYY_RESOLVED_BY_MISSING_STACK_YYY"
-                elif var.stack.output_yet_to_be_deployed(var):
+                elif isinstance(var.stack, Stack) and var.stack.output_yet_to_be_deployed(var):
                     var._resolved = "YYY_RESOLVED_BY_MISSING_OUTPUT_YYY"
 
         matches = re.findall("XXX_[A-Z0-9_]+_XXX", json.dumps(self.params_json_obj))
